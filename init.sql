@@ -44,32 +44,37 @@ INSERT INTO artistas (nome, pais, genero) VALUES
     ('Dua Lipa',        'Reino Unido',    'Pop'),
     ('Kendrick Lamar',  'Estados Unidos', 'Hip-Hop'),
     ('Billie Eilish',   'Estados Unidos', 'Indie Pop'),
-    ('Tame Impala',     'Austrália',      'Psicodélico');
+    ('Tame Impala',     'Austrália',      'Psicodélico')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO albuns (artista_id, titulo, ano_lancamento, total_faixas) VALUES
     (1, 'After Hours',          2020, 14),
     (2, 'Future Nostalgia',     2020, 11),
     (3, 'To Pimp a Butterfly',  2015, 16),
     (4, 'Happier Than Ever',    2021, 16),
-    (5, 'Currents',             2015, 13);
+    (5, 'Currents',             2015, 13)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO musicas (album_id, titulo, duracao_segundos, numero_faixa) VALUES
     (1, 'Blinding Lights',  200, 6),
     (2, 'Levitating',       203, 5),
     (3, 'Alright',          219, 9),
     (4, 'Happier Than Ever',298, 11),
-    (5, 'The Less I Know the Better', 216, 11);
+    (5, 'The Less I Know the Better', 216, 11)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO usuarios (nome, email, plano) VALUES
     ('Ana Lima',      'ana.lima@email.com',      'premium'),
     ('Bruno Costa',   'bruno.costa@email.com',   'free'),
     ('Carla Souza',   'carla.souza@email.com',   'premium'),
     ('Diego Martins', 'diego.martins@email.com', 'free'),
-    ('Elena Ferraz',  'elena.ferraz@email.com',  'premium');
+    ('Elena Ferraz',  'elena.ferraz@email.com',  'premium')
+ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO reproducoes (usuario_id, musica_id, reproduzida_em, duracao_ouvida_segundos) VALUES
     (1, 1, '2025-04-01 08:15:00', 200),
     (2, 3, '2025-04-01 09:30:00', 100),
     (3, 5, '2025-04-02 14:00:00', 216),
     (4, 2, '2025-04-03 18:45:00', 90),
-    (5, 4, '2025-04-04 21:00:00', 298);
+    (5, 4, '2025-04-04 21:00:00', 298)
+ON CONFLICT DO NOTHING;
