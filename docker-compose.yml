@@ -11,6 +11,7 @@ services:
       POSTGRES_DB: apashe-spark
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   minio:
     image: minio/minio:RELEASE.2025-02-03T21-03-04Z
