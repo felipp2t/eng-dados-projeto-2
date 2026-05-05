@@ -14,32 +14,37 @@ Demonstra operações de manipulação de dados (DML) e Time Travel nas tabelas 
 | MERGE | `musicas` | Atualiza existente e insere novo em uma única operação |
 | Time Travel | `musicas` | Consulta versões anteriores e exibe o histórico |
 
-## Registrar tabelas no Spark
+## Helpers de path
 
-Antes de usar Spark SQL, as tabelas Delta são registradas apontando para o caminho S3:
+O notebook não usa o Hive catalog (`CREATE TABLE`) para evitar inconsistências no `_delta_log`. Em vez disso, define três funções utilitárias na célula de setup:
 
 ```python
-spark.sql(f"""
-    CREATE TABLE IF NOT EXISTS {tabela}
-    USING delta
-    LOCATION 's3a://{BRONZE_BUCKET}/{tabela}'
-""")
+def dp(tabela):
+    return f's3a://{BRONZE_BUCKET}/{tabela}'        # path S3
+
+def dt(tabela):
+    return DeltaTable.forPath(spark, dp(tabela))    # DeltaTable API
+
+def dr(tabela):
+    return spark.read.format('delta').load(dp(tabela))  # DataFrame
 ```
+
+!!! warning "Por que não usar CREATE TABLE?"
+    `CREATE TABLE IF NOT EXISTS ... USING delta LOCATION '...'` escreve uma entrada de metadados no `_delta_log` da tabela. Se o notebook for re-executado após uma limpeza parcial do bucket, essa entrada extra gera versões inconsistentes e o erro `DELTA_VERSIONS_NOT_CONTIGUOUS`.
 
 ## INSERT
 
 ```python
-spark.sql("""
-    INSERT INTO artistas VALUES (6, 'Novo Artista', 'Brasil', 'MPB', '2024-01-01')
-""")
+novo_artista = spark.createDataFrame([
+    Row(id=6, nome='Novo Artista', pais='Brasil', genero='MPB', criado_em='2024-01-01')
+])
+novo_artista.write.format('delta').mode('append').save(dp('artistas'))
 ```
 
 ## UPDATE
 
-O Delta Lake suporta UPDATE via API Python sem necessidade de reescrever a tabela inteira:
-
 ```python
-DeltaTable.forName(spark, 'usuarios').update(
+dt('usuarios').update(
     condition="plano = 'gratuito'",
     set={"plano": "'basico'"}
 )
@@ -48,7 +53,7 @@ DeltaTable.forName(spark, 'usuarios').update(
 ## DELETE
 
 ```python
-DeltaTable.forName(spark, 'artistas').delete("id = 6")
+dt('artistas').delete("id = 6")
 ```
 
 ## MERGE (UPSERT)
@@ -57,34 +62,40 @@ O MERGE atualiza registros existentes e insere os novos em uma única operação
 
 ```python
 (
-    DeltaTable.forName(spark, 'musicas')
+    dt('musicas')
     .alias('alvo')
     .merge(atualizacoes.alias('src'), 'alvo.id = src.id')
-    .whenMatchedUpdateAll()    # id=1 existe → atualiza
-    .whenNotMatchedInsertAll() # id=99 não existe → insere
+    .whenMatchedUpdateAll()     # id=1 existe → atualiza
+    .whenNotMatchedInsertAll()  # id=99 não existe → insere
     .execute()
 )
 ```
 
 ## Time Travel
 
-O Delta Lake registra cada operação DML como uma nova versão. É possível consultar versões anteriores:
-
 ```python
 # Histórico de operações
-DeltaTable.forName(spark, 'musicas').history().show()
+dt('musicas').history().select('version', 'timestamp', 'operation').show()
 
 # Ler versão específica
-spark.read.format('delta').option('versionAsOf', 0).table('musicas').show()
+spark.read.format('delta').option('versionAsOf', 0).load(dp('musicas')).show()
 ```
 
 ### Histórico esperado após as operações
 
-| version | operation | description |
-|---------|-----------|-------------|
+| version | operation | descrição |
+|---------|-----------|-----------|
 | 2 | MERGE | MERGE INTO musicas |
-| 1 | WRITE | WRITE (overwrite da conversão) |
-| 0 | WRITE | WRITE inicial (criação) |
+| 1 | WRITE | INSERT (append) |
+| 0 | WRITE | WRITE inicial (criação pelo notebook 02) |
 
 !!! info "ACID no Delta Lake"
     Cada operação DML é gravada atomicamente no `_delta_log`. Se uma operação falhar no meio, o Delta garante que nenhuma alteração parcial seja visível — o estado anterior permanece intacto.
+
+## Resetar o ambiente
+
+Se o `_delta_log` ficar corrompido por execuções parciais, a forma mais segura de resetar é deletar o bucket `bronze` pelo MinIO Console e re-executar o notebook 02:
+
+1. Acesse **http://localhost:9021**
+2. **Buckets → bronze → Delete Bucket**
+3. Re-execute o notebook 02 (recria o bucket e as tabelas Delta do zero)
