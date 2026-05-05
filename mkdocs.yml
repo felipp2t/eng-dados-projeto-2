@@ -1,0 +1,56 @@
+site_name: Pipeline de Dados com Delta Lake
+site_description: Documentação do pipeline de engenharia de dados — PostgreSQL → MinIO → Delta Lake
+site_author: Felipe Rossetto
+docs_dir: docs
+
+theme:
+  name: material
+  language: pt
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Modo escuro
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Modo claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+
+plugins:
+  - search:
+      lang: pt
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
+
+nav:
+  - Início: index.md
+  - Arquitetura: arquitetura.md
+  - Modelo de Dados: modelo-dados.md
+  - Setup: setup.md
+  - Notebooks:
+      - "01 — Extração (PostgreSQL → CSV)": notebooks/01-extracao.md
+      - "02 — Conversão (CSV → Delta Lake)": notebooks/02-delta-lake.md
+      - "03 — DML e Time Travel": notebooks/03-dml.md
