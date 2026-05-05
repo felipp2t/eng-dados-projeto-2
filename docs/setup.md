@@ -11,7 +11,7 @@
 ```bash
 git clone <url-do-repo>
 cd projeto-2
-```
+``` 
 
 ## 2. Configurar variáveis de ambiente
 
